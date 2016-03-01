@@ -1,0 +1,33 @@
+---
+title: "recommender-system"
+author: "Wenxue Zhang"
+date: "February 29, 2016"
+output: html_document
+---
+
+```{r}
+setwd("~/Desktop/628/pro2")
+library("recommenderlab")
+data(MovieLense)
+MovieLense
+train<-MovieLense[1:900]
+u<-MovieLense[901]
+as(u,"matrix")[,1:5]
+r<-Recommender(train,method="UBCF")
+p<-r@model$data@data@p
+recom<-predict(r,u,n=5)
+recom
+as(recom,"list")
+```
+
+```{r}
+u.data<-read.delim("u.data")
+names(u.data)<-c("userid","itemid","rating","timestamp")
+u.info<-read.delim("u.info")
+u.item<-read.delim("u.item",sep="|")
+names(u.item)<-c("moveid","movietitle","releasedate","videoreleasedate","IMDbURL","uknown","Action","Adventure","Animation","Children's","Comedy","Crime","Documentary","Drama","Fantasy","Film-Noir","Horror","Musical","Mystery","Romance","Sci-Fi","Thriller","War","Western")
+u.genre<-read.delim("u.genre",sep="|")
+u.user<-read.delim("u.user",sep="|")
+names(u.user)<-c("userid","age","gender","occupation","zipcode")
+u.occupation<-read.delim("u.occupation")
+```
