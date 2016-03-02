@@ -1,0 +1,130 @@
+---
+title: "recommender-system"
+author: "Wenxue Zhang"
+date: "February 29, 2016"
+output: html_document
+---
+
+```{r}
+setwd("~/Desktop/628/pro2")
+library("recommenderlab")
+library("dplyr")
+data(MovieLense)
+u.data<-read.delim("u.data",head=F)
+names(u.data)<-c("userid","itemid","rating","timestamp")
+u.info<-read.delim("u.info",head=F)
+u.item<-read.delim("u.item",sep="|",head=F)
+names(u.item)<-c("moveid","movietitle","releasedate","videoreleasedate","IMDbURL","uknown","Action","Adventure","Animation","Children's","Comedy","Crime","Documentary","Drama","Fantasy","Film-Noir","Horror","Musical","Mystery","Romance","Sci-Fi","Thriller","War","Western")
+u.genre<-read.delim("u.genre",sep="|",head=F)
+u.user<-read.delim("u.user",sep="|",head=F)
+names(u.user)<-c("userid","age","gender","occupation","zipcode")
+u.occupation<-read.delim("u.occupation",head=F)
+
+MovieLense
+u<-MovieLense[1]
+uu<-as(u,"matrix")
+
+# Personal rating matrix
+part<-matrix(rep(0,943*1664),ncol=1664) 
+for(i in 1:943){
+  u<-MovieLense[i]
+  uu<-as(u,"matrix")
+  part[i,]<-uu
+}
+colnames(part)<-colnames(uu)
+data<-cbind(u.user,part)
+write.csv(uu,"Personal.csv")
+
+#age group
+age=data$age
+age.divide=c(25,40,74)
+age.group=rep(0,943)
+for(i in 1:943){
+  for(j in 1:7)
+  if(age[i]<=age.divide[j]){
+    age.group[i]=j
+    break
+    }
+}
+hist(age.group)
+data$age.group<-age.group
+
+dim(data)
+m = as.matrix(data[, 6:1669])
+m[is.na(m)]<-0
+numberofrating<-apply(m,2,function(c)sum(c!=0))
+popular<-names(sort(numberofrating)[1655:1664]) #top 10 popular
+index<-which(colnames(data) %in% popular)
+title<-as.character(colnames(data)[index])
+
+#compare age group
+age.sum<-matrix(rep(0,40),nrow=10)
+for(i in 1:10){
+  age.sum[i,]=c(tapply(data[,index[i]][complete.cases(data[,index[i]])],INDEX = data$age.group[complete.cases  (data[,index[i]])],FUN = sum),sum(data[,index[i]],na.rm=TRUE))
+  }
+colnames(age.sum)<-c("<25","25-40","41-74","overall")
+rownames(age.sum)<-title
+age.sum
+ 
+ylim <- c(0, max(age.sum[,4]) * 1.1) 
+cols <- terrain.colors(3) 
+barplot(t(age.sum[,1:3]), ylim = ylim, offset = 0, axis.lty = 1, col = cols,beside=T)
+legend("topright",legend=rownames(t(age.sum[,1:3])),fill=cols,cex=0.75)
+box()
+
+#compare gender
+gender.mean<-matrix(rep(0,30),nrow=10)
+for(i in 1:10){
+  gender.mean[i,]=c(tapply(data[,index[i]][complete.cases(data[,index[i]])],INDEX = data$gender[complete.cases  (data[,index[i]])],FUN = mean),mean(data[,index[i]],na.rm=TRUE))
+  }
+
+colnames(gender.mean)<-c("M","F","overall")
+rownames(gender.mean)<-title
+gender.mean
+
+ylim <- c(0, max(gender.mean[,3]) * 1.1) 
+cols <- terrain.colors(2) 
+barplot(t(gender.mean[,1:2]), ylim = ylim, offset = 0, axis.lty = 1, col = cols,beside=T)
+legend("topright",legend=rownames(t(gender.mean[,1:2])),fill=cols,cex=0.75)
+box()
+
+numberofrating<-apply(m,1,function(c)sum(c!=0))
+active<- which(order(numberofrating) %in% c(1:10)) #top 10 active person
+
+#compare item 
+category<-rep(0,18)
+for(i in 1:18){
+  index<-which(u.item[,6+i]!=0)
+  title<-u.item$movietitle[index]
+  indice<-which(colnames(data)[6:1669] %in% as.character(title))+5
+  m<-as.matrix(data[868,indice])
+  category[i]<-mean(m,na.rm=TRUE)
+}
+names(category)<-colnames(u.item)[7:24]
+cols <- terrain.colors(23)
+barplot(category,xlab="Category",col=cols)
+
+# Personal rating matrix for all movies
+train<-MovieLense[1:900]
+all<-matrix(rep(0,43*1664),ncol=1664)
+for(i in 1:43){
+  u<-MovieLense[900+i]
+  uu<-as(u,"matrix")
+  r<-Recommender(train,method="UBCF")
+  ratings<-predict(r,u,type="ratings")
+  rr<-as(ratings,"matrix")
+  uu[is.na(uu)]<-0
+  rr[is.na(rr)]<-0
+  all[i,]<-uu+rr
+}
+colnames(all)<-colnames(uu)
+write.csv(all,file="Predict.csv")
+```
+
+```{r}
+#Evaluation
+scheme<-evaluationScheme(train,method="cross",k=4,given=10,goodRating=3)
+algorithms<-list("random items"=list(name="RANDOM",PARAM=NULL),"popular items"=list(name="POPULAR",param=NULL),"user-based CF"=list(name="UBCF",param=list(method="Cosine",nn=50)),"item-based CF"=list(name="IBCF",param=list(method="Cosine",k=50)))
+results<-evaluate(scheme,algorithms,n=c(1,3,5,10,15,20,50))
+plot(results,annotate=c(1,3),legend="right")
+```
