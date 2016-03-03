@@ -1,0 +1,96 @@
+---
+title: "Untitled"
+author: "Chenxi He"
+date: "March 1, 2016"
+output: html_document
+---
+Stable benchmark dataset. 100,000 ratings from 1000 users on 1700 movies. Released 4/1998.
+```{r}
+data=read.csv("Personal.csv")
+age=data$age
+age.divide=c(20,25,30,35,40,50)
+age.group=rep(7,943)
+for(i in 1:943){
+  for(j in 1:6)
+  if(age[i]<=age.divide[j]){
+    age.group[i]=j
+    break
+    }
+}
+##age
+tapply(data[,c(56)][complete.cases(data[,56])],INDEX =age.group[complete.cases(data[,56])],FUN = mean)
+
+m = as.matrix(data[, 7:1670])
+m[is.na(m)]<-0
+a<-apply(m,2,function(c)sum(c!=0))
+names(sort(a)[1655:1664])
+
+for(i in which(names(data) %in% names(sort(a)[1655:1664]))){
+  print(tapply(data[,c(i)][complete.cases(data[,i])],INDEX = age.group[complete.cases(data[,i])],FUN = mean))
+}
+#7  56 106 127 187 264 291 293 299 305
+library(plotly)
+
+
+dat=data
+dat$agegroup=as.factor(age.group)
+dat=dat[,c(1,293,1671)]
+d=dat[complete.cases(data[,293]),]
+p=plot_ly(d, x = Scream..1996., color = agegroup,type="box")
+p
+
+
+
+#gender
+
+tapply(data[,c(56)][complete.cases(data[,56])],INDEX = data$gender[complete.cases(data[,56])],FUN = mean)
+mean(data[,c(57)],na.rm=TRUE)
+
+m = as.matrix(data[, 7:1670])
+m[is.na(m)]<-0
+a<-apply(m,2,function(c)sum(c!=0))
+names(sort(a)[1655:1664])
+
+for(i in which(names(data) %in% names(sort(a)[1655:1664]))){
+  print(tapply(data[,c(i)][complete.cases(data[,i])],INDEX = data$gender[complete.cases(data[,i])],FUN = mean))
+}
+
+
+dim(data)
+m = as.matrix(data[, 7:1670])
+m[is.na(m)]<-0
+numberofrating<-apply(m,2,function(c)sum(c!=0))
+popular<-names(sort(numberofrating)[1655:1664]) #top 10 popular
+index<-which(colnames(data) %in% popular)
+title<-as.character(colnames(data)[index])
+
+gender.mean<-matrix(rep(0,30),nrow=10)
+for(i in 1:10){
+  gender.mean[i,]=c(tapply(data[,index[i]][complete.cases(data[,index[i]])],INDEX = data$gender[complete.cases  (data[,index[i]])],FUN = mean),mean(data[,index[i]],na.rm=TRUE))
+  }
+
+colnames(gender.mean)<-c("M","F","overall")
+rownames(gender.mean)<-title
+gender.mean
+
+ylim <- c(0, max(gender.mean[,3]) * 1.1) 
+cols <- terrain.colors(2) 
+barplot(t(gender.mean[,1:2]), ylim = ylim, offset = 0, axis.lty = 1, col = cols,beside=T)
+legend("topright",legend=rownames(t(gender.mean[,1:2])),fill=cols,cex=0.75)
+box()
+
+##occupation
+
+tapply(data[,305][complete.cases(data[,305])],INDEX = data$occupation[complete.cases(data[,305])],FUN = mean)
+
+library(ggplot2)
+
+
+
+tapply(data[,264][complete.cases(data[,264])],INDEX = data$occupation[complete.cases(data[,264])],FUN = mean)
+
+tapply(data[,127][complete.cases(data[,127])],INDEX = data$occupation[complete.cases(data[,127])],FUN = mean)
+
+
+
+```
