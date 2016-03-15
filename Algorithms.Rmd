@@ -1,0 +1,46 @@
+---
+title: "Algorithms"
+author: "Wenxue Zhang"
+date: "March 14, 2016"
+output: html_document
+---
+
+
+```{r}
+setwd("~/Desktop/628/pro2")
+library("recommenderlab")
+library("dplyr")
+
+rm(list=ls())
+#u.data:user's rating
+u.data<-read.delim("u.data",head=F)
+names(u.data)<-c("userid","itemid","rating","timestamp")
+#u.info:total users, items and ratings
+u.info<-read.delim("u.info",head=F,sep="")
+#u.item:item and feature
+u.item<-read.delim("u.item",sep="|",head=F)
+names(u.item)<-c("moveid","movietitle","releasedate","videoreleasedate","IMDbURL","unknown","Action","Adventure","Animation","Children's","Comedy","Crime","Documentary","Drama","Fantasy","Film-Noir","Horror","Musical","Mystery","Romance","Sci-Fi","Thriller","War","Western")
+#u.genre:list for feature
+u.genre<-read.delim("u.genre",sep="|",head=F)
+#u.user:users' information
+u.user<-read.delim("u.user",sep="|",head=F)
+names(u.user)<-c("userid","age","gender","occupation","zipcode")
+#u.occupation:list of occupation
+u.occupation<-read.delim("u.occupation",head=F)
+
+user<-u.info[1,1]
+item<-u.info[2,1]
+feature<-dim(u.genre)[1]
+
+table1<-as.matrix(u.item)[,6:(5+feature)]
+table2<-matrix(,ncol=item,nrow=user)
+for(k in 1:u.info[3,1]){
+  i<-u.data$userid[k]
+  j<-u.data$itemid[k]
+  table2[i,j]<-u.data$rating[k]
+}
+table2[is.na(table2)]<-0
+write.csv(table1,"table1.csv")
+write.csv(table2,"table2.csv")
+```
+
