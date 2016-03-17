@@ -10,7 +10,6 @@ output: html_document
 setwd("~/Desktop/628/pro2")
 library("recommenderlab")
 library("dplyr")
-xx=22
 rm(list=ls())
 #u.data:user's rating
 u.data<-read.delim("u.data",head=F)
