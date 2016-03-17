@@ -1,0 +1,133 @@
+---
+title: "BNRS"
+author: "Chenxi He"
+date: "March 14, 2016"
+output: html_document
+---
+
+
+```{r}
+rm(list=ls())
+#u.data:user's rating
+u.data<-read.delim("u.data",head=F)
+names(u.data)<-c("userid","itemid","rating","timestamp")
+#u.info:total users, items and ratings
+u.info<-read.delim("u.info",head=F,sep="")
+#u.item:item and feature
+u.item<-read.delim("u.item",sep="|",head=F)
+names(u.item)<-c("moveid","movietitle","releasedate","videoreleasedate","IMDbURL","unknown","Action","Adventure","Animation","Children's","Comedy","Crime","Documentary","Drama","Fantasy","Film-Noir","Horror","Musical","Mystery","Romance","Sci-Fi","Thriller","War","Western")
+#u.genre:list for feature
+u.genre<-read.delim("u.genre",sep="|",head=F)
+#u.user:users' information
+u.user<-read.delim("u.user",sep="|",head=F)
+names(u.user)<-c("userid","age","gender","occupation","zipcode")
+#u.occupation:list of occupation
+u.occupation<-read.delim("u.occupation",head=F)
+
+user<-u.info[1,1]
+item<-u.info[2,1]
+feature<-dim(u.genre)[1]
+table1<-as.matrix(u.item)[,6:(5+feature)]
+class(table1)<-"numeric"
+table2<-matrix(,ncol=item,nrow=user)
+for(k in 1:u.info[3,1]){
+  i<-u.data$userid[k]
+  j<-u.data$itemid[k]
+  table2[i,j]<-u.data$rating[k]
+}
+table2[is.na(table2)]<-0
+```
+
+
+#content based function
+```{r}
+# M.vector normalizing factor vector 
+M.vector=table1 %*% (as.matrix(log(item.num/colSums(table1)+1)))
+#nk vector
+nk=colSums(table1!= 0)
+item.num=dim(table1)[1]
+feature.num=dim(table1)[2]
+
+#table3_ij row:item; col: feature; entry:w_item,feature
+table3= t(t(table1) * ((log(item.num/nk+1)))) * as.vector((1/M.vector))
+
+#calculate w_iu : 1/|I(U_cb)| vector
+w_iu=function(user.rate=1){
+  nnk=1/rowSums(table2 > 0)
+  t2=as.matrix(table2)
+  t3=table2-user.rate
+  t4=t3
+  t4[which(t3!=0)]=0
+  t4[which(t3==0)]=user.rate
+  t5=t((t4) * nnk)
+  return(t5)
+}
+
+#function x={user,item} y=c(p(r=1),...,p(r=5))
+cb_fun=function(targetitem=i,user=u){
+  item.num=dim(table1)[1]
+  feature.num=dim(table1)[2]
+  nk=colSums(table1!= 0)
+  #item instantiation e_vb==i
+  p.itemgivenev=rep(0,item.num)
+  #propagating towards features,using thereom 2,EP
+  p.f=1/feature.num
+  #p.item
+  p.item=sum(table3[i,]*p.f)
+  #p(f|ev)
+  p.featuregivenev=rep(p.f,feature.num)+table[i,]*p.f*(1-p.f)/p.item
+  
+  #propagating to items using thereom 1 p(I|ev), only need to calculate items user u has rated
+  p.itemgivenev=table3 %*% p.featuregivenev
+  p.itemgivenev[u]=1
+  
+  #propagating to user rate using thereom 1
+  wui_rate1=w_iu(1)
+  wui_rate2=w_iu(2)
+  wui_rate3=w_iu(3)
+  wui_rate4=w_iu(4)
+  wui_rate5=w_iu(5)
+  return(c(sum(wui_rate1[u,] * p.itemgivenev),sum(wui_rate2[u,] * p.itemgivenev),sum(wui_rate3[u,] * p.itemgivenev),sum(wui_rate4[u,] * p.itemgivenev),sum(wui_rate5[u,] * p.itemgivenev)))
+  }
+```
+
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
