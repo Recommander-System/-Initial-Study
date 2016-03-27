@@ -27,7 +27,10 @@ names(u.user)<-c("userid","age","gender","occupation","zipcode")
 #u.occupation:list of occupation
 u.occupation<-read.delim("u.occupation",head=F)
 
+item<-dim(u.item)[1]
+user<-dim(u.user)[1]
 feature<-dim(u.genre)[1]
+
 table1<-as.matrix(u.item)[,6:(5+feature)]
 class(table1)<-"numeric"
 table2<-matrix(,ncol=item,nrow=user)
