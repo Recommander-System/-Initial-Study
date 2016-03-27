@@ -1,0 +1,132 @@
+---
+title: "Algorithms"
+author: "Wenxue Zhang"
+date: "March 14, 2016"
+output: html_document
+---
+
+```{r}
+setwd("~/Desktop/628/pro2")
+library("recommenderlab")
+library("dplyr")
+
+rm(list=ls())
+#u.data:user's rating
+u.data<-read.delim("u.data",head=F)
+names(u.data)<-c("userid","itemid","rating","timestamp")
+#u.info:total users, items and ratings
+u.info<-read.delim("u.info",head=F,sep="")
+#u.item:item and feature
+u.item<-read.delim("u.item",sep="|",head=F)
+names(u.item)<-c("moveid","movietitle","releasedate","videoreleasedate","IMDbURL","unknown","Action","Adventure","Animation","Children's","Comedy","Crime","Documentary","Drama","Fantasy","Film-Noir","Horror","Musical","Mystery","Romance","Sci-Fi","Thriller","War","Western")
+#u.genre:list for feature
+u.genre<-read.delim("u.genre",sep="|",head=F)
+#u.user:users' information
+u.user<-read.delim("u.user",sep="|",head=F)
+names(u.user)<-c("userid","age","gender","occupation","zipcode")
+#u.occupation:list of occupation
+u.occupation<-read.delim("u.occupation",head=F)
+
+user<-u.info[1,1]
+item<-u.info[2,1]
+feature<-dim(u.genre)[1]
+
+table1<-as.matrix(u.item)[,6:(5+feature)]
+class(table1)<-"numeric"
+table2<-matrix(,ncol=item,nrow=user)
+for(k in 1:u.info[3,1]){
+  i<-u.data$userid[k]
+  j<-u.data$itemid[k]
+  table2[i,j]<-u.data$rating[k]
+}
+table2[is.na(table2)]<-0
+
+#content based function
+#test
+table1=matrix(c(1,0,0,1,0,1,1,1,1,1,0,1,1,1,1,1),byrow=TRUE,nrow=4)
+table2=matrix(c(0,3,5,3,4,2,4,2),byrow=TRUE,nrow=2)
+#nk vector
+nk=colSums(table1!= 0)
+item.num=dim(table1)[1]
+feature.num=dim(table1)[2]
+# M.vector normalizing factor vector
+M.vector=table1 %*% (as.matrix(log(item.num/nk+1)))
+#table3_ij row:item; col: feature; entry:w_item,feature
+table3= t(t(table1) * (log(item.num/nk+1))) * as.vector((1/M.vector))
+
+#function x={user,item} y=c(p(r=1),…,p(r=5))
+#let i=1,u=1 important!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+i=1
+u=1
+ #item instantiation e_vb==i
+  p.itemgivenev=rep(0,item.num)
+  #propagating towards features,using thereom 2,EP
+  p.f=1/feature.num
+  #p.item
+  p.item=sum(table3[i,]*p.f)
+  #p(f|ev)
+  p.featuregivenev=rep(p.f,feature.num)+table3[i,]*p.f*(1-p.f)/p.item
+  #propagating to items using thereom 1 p(I|ev), only need to calculate items user u has rated
+  p.itemgivenev=table3 %*% as.matrix(p.featuregivenev)
+  p.itemgivenev[i,1]=1
+  p.itemgivenev_n=1-p.itemgivenev
+
+#propagating to user rate using thereom 1
+#parent
+pa<-as.numeric(table2[u,]!=0)
+p0<-pa %*% (p.itemgivenev_n/sum(pa))
+#w matrix row:u_1,s,col:i_k,1,entry=1/num(pa) or 0
+w<-matrix(0,nrow=5,ncol=item.num)
+for (i in 1:item.num){
+  if (table2[u,i]!=0){
+    w[table2[u,i],i]=1/sum(pa)
+  }
+}
+p.cb<-c(p0,w %*% p.itemgivenev)
+
+#Collaborative function
+#PC
+library(Hmisc)
+table2=matrix(c(0,3,5,1,4,2,2,4,1,0,1,5,1,4,4),byrow=TRUE,nrow=3)
+pc=rcorr(t(table2), type="pearson")$r
+#function x={user,item,N} y=c(p(r=1),…,p(r=5))
+#let i=1,u=1 important!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+i=1
+u=1
+N=3
+#sim(u_i,a)
+index<-t(table2[u,]*t(table2)!=0) #index for movies rated by both users
+c<-rowSums(index)
+sim<-c/c[u]*(abs(pc)[u,])
+#Choose neighbor(parents)
+neighbor<-order(sim,decreasing=T)[2:(1+N)]
+#Rsim
+rsim<-sim/sum(sim[neighbor])
+#N(neighbor,a) matrix row:neighbor,col:active user,entry:number of times
+#P(a|u)
+N_ua<-matrix(,nrow=N,ncol=6)
+p.a<-matrix(,nrow=N,ncol=6)
+
+for (n in 1:N){
+  j<-neighbor[n]
+  if (table2[j,i]!=0){
+    for (s in 1:5){
+      N_ua[n,s]=sum(table2[j,index[j,]]==table2[j,i] & table2[u,index[j,]]==s)
+      }
+    N_ua[n,6]=sum(table2[j,index[j,]]==table2[j,i])
+    p.a[n,]<-c(0,((N_ua[n,]+1/5)/(N_ua[n,6]+1))[-6]) #p(a=0|u=r)=0
+    }
+  else {
+    p.a[n,]<-c(1,rep(0,5))
+    }
+  }
+  
+#p.collaborative
+p.coll<-rsim[neighbor] %*% as.matrix(p.a)
+
+#Combine
+alpha<-vector()
+
+
+```
+
