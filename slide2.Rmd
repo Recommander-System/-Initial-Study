@@ -2,7 +2,7 @@
 title: "Hybrid recommendation systems based on bayesian network"
 author: "Chenxi He, Shengqian Chen, Wenxue Zhang"
 date: "March 16, 2016"
-output: beamer_presentation
+output: slidy_presentation
 ---
 
 ##Canonical weighted sum
@@ -25,7 +25,7 @@ if $F_k\notin Pa(I_j)$
 $Pr(f_{k,1}\mid i_{j,1}) = Pr(f_{k,1})$  
 
 if $F_k\in Pa(I_j)$  
-$Pr(f_{k,1}\mid i_{j,1}) = Pr(f_{k,1}) + \frac{w(f_{k,1},i_{j,1})Pr(f_{k,1}(1-Pr(f_{k,1}))}{Pr(i_{j,1})}$
+$Pr(f_{k,1}\mid i_{j,1}) = Pr(f_{k,1}) + \frac{w(f_{k,1},i_{j,1})Pr(f_{k,1})(1-Pr(f_{k,1}))}{Pr(i_{j,1})}$
 
 where $Pr(i_{j,1}) = \sum_{F_k\in Pa(I_j)}w(f_{k,1},i_{j,1})Pr(f_{k,1})$
 
@@ -35,7 +35,7 @@ where $Pr(i_{j,1}) = \sum_{F_k\in Pa(I_j)}w(f_{k,1},i_{j,1})Pr(f_{k,1})$
 -$ev_{cb}==I_j\quad Pr(i_{j,1}\mid ev) = 1$  
 $\,$ Compute $Pr(F_k\mid ev)$ using Theorem 2  
 -Propagate to items using Theorem1.   
--Propagate to $A_{CB}$ and $U_i\in U_1^-$ using Theorem 1.
+-Propagate to $A_{CB}$ and $U_i\in U_I^-$ using Theorem 1.
 
 2.Collaborative propagation
 
@@ -57,7 +57,7 @@ table2: row:user;  column:movies;  entry:{0,1-5}
 
 $\left(\begin{array}{ccc} 0&3&5\\4&2&4 \end{array}\right)$
 
-Here we try to predict what user1 will rate item1.
+Here we try to predict what user1 will rate item 1.
 
 ## CB-part Algorithm Application in the previous data
 
@@ -106,6 +106,7 @@ u=1
   wui_rate4=w_iu(user.rate = 4,user = 1)
   wui_rate5=w_iu(user.rate = 5,user = 1)
   p=c(sum(wui_rate0 * p.itemgivenev),sum(wui_rate1 * p.itemgivenev),sum(wui_rate2 * p.itemgivenev),sum(wui_rate3 * p.itemgivenev),sum(wui_rate4 * p.itemgivenev),sum(wui_rate5 * p.itemgivenev))
+  names(p)=c("P(U_1,0 | EV_cb)","P(U_1,1 | EV_cb)","P(U_1,2 | EV_cb)","P(U_1,3 | EV_cb)","P(U_1,4 | EV_cb)","P(U_1,5 | EV_cb)")
 ```
 
 First we need to calculate the canonical weight in two circumstance (item,feature) and (item,user)
@@ -129,5 +130,5 @@ t(p.itemgivenev)
 
 Finally we can get the probabiliy how the user will rate the item:
 ```{r}
-t(p)
+p
 ```
